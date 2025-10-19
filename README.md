@@ -7,7 +7,7 @@ A modern todo application built with Next.js that implements smart task propagat
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/htehnd/smart-todo.git
+git clone https://github.com/tedhn/smart-todo.git
 cd smart-todo
 ```
 
@@ -69,7 +69,7 @@ Task A (complete) → Task B (unlocked) → Task C (locked)
 interface Task {
   id: string;
   title: string;
-  completed: boolean;
+  status: "todo" | "in-progress" | "blocked" | "done";
   dependencies: string[]; // IDs of tasks this depends on
   createdAt: Date;
   updatedAt: Date;
