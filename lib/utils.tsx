@@ -1,6 +1,6 @@
 import { supabase } from "@/app/page";
 import { Badge } from "@/components/ui/badge";
-import { ITask, ITaskDetails, Status } from "@/types/task";
+import { ITask, Status } from "@/types/task";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -65,4 +65,49 @@ export const fetchTaskDetails = async (taskId: number, isDetailed = false) => {
   }
 
   return null;
+};
+
+export const getParentTasksToUpdate = (
+  tasklist: ITask[],
+  newTask: ITask,
+  visited: Set<number>
+): { id: number; status: Status }[] => {
+  const newTasklist = tasklist.map((t) => (t.id === newTask.id ? newTask : t));
+
+  if (visited.has(newTask.id)) return [];
+  visited.add(newTask.id);
+
+  const parentTasks = newTasklist.filter((t) =>
+    t.dependencies.some((dep) => dep.id === newTask.id)
+  );
+
+  const parentsToUpdate = parentTasks.map((parentTask) => {
+    const updatedParentTask = {
+      ...parentTask,
+      dependencies: parentTask.dependencies.map(
+        (dep) => newTasklist.find((t) => t.id === dep.id) || dep
+      ),
+    };
+
+    const isBlocked = updatedParentTask.dependencies.some(
+      (dep) => dep.status !== "done"
+    );
+
+    const newStatus = isBlocked ? ("blocked" as Status) : ("todo" as Status);
+    return { id: parentTask.id, status: newStatus };
+  });
+
+  const recursiveUpdates = parentTasks.flatMap((parentTask, index) => {
+    const newParentTask = {
+      ...parentTask,
+      status: parentsToUpdate[index].status,
+    };
+    return getParentTasksToUpdate(newTasklist, newParentTask, visited);
+  });
+
+  const allUpdates = [...parentsToUpdate, ...recursiveUpdates];
+  const uniqueUpdates = Array.from(
+    new Map(allUpdates.map((u) => [u.id, u])).values()
+  );
+  return uniqueUpdates;
 };

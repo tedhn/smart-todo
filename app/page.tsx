@@ -39,6 +39,7 @@ import { ITask, ITaskDependency, Status } from "@/types/task";
 import { renderStatusBadge } from "@/lib/utils";
 import { useTaskStore } from "@/store/task";
 import { Spinner } from "@/components/ui/spinner";
+import { useRouter } from "next/navigation";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_KEY || "";
@@ -46,6 +47,7 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_KEY || "";
 export const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
 export default function Home() {
+  const router = useRouter();
   const tasklist = useTaskStore((state) => state.tasklist);
   const updateTaskList = useTaskStore((state) => state.updateTaskList);
   const fetchTasks = useTaskStore((state) => state.fetchTasks);
@@ -56,9 +58,9 @@ export default function Home() {
   const [dependencies, setDependencies] = useState<ITaskDependency[]>([]);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    console.log(isFetched);
     if (!isFetched) {
       setIsLoading(true);
       fetchTasks().then(() => {
@@ -73,17 +75,11 @@ export default function Home() {
       return;
     }
 
-    let status: Status = "todo";
-
-    // Check if all dependencies are not blocked
-    const areDependenciesBlocked = newTask.dependencies.some((dep) => {
-      const depTask = tasklist.find((task) => task.id === dep.id);
-      return depTask?.status === "blocked";
-    });
-
-    if (areDependenciesBlocked) {
-      status = "blocked";
-    }
+    let status: Status = newTask.dependencies.every(
+      (dep) => dep.status === "done"
+    )
+      ? "todo"
+      : "blocked";
 
     const { data, error: addedTaskError } = await supabase
       .from("Tasks")
@@ -128,7 +124,17 @@ export default function Home() {
     setTitle("");
     setDescription("");
     setDependencies([]);
+    setIsModalOpen(false);
     toast.success("Task added successfully!");
+  };
+
+  const handleMultipleSelectChange = (ids: string[]) => {
+    const newDependencies = ids
+      .map((id) => tasklist.find((task) => task.id === +id))
+      .filter((task) => task !== undefined)
+      .map(({ dependencies, ...task }) => task);
+
+    setDependencies(newDependencies);
   };
 
   if (isLoading)
@@ -137,12 +143,13 @@ export default function Home() {
         <Spinner />
       </div>
     );
+
   return (
     <div className="w-1/3 h-full ">
       <div className="flex  items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-center">Smart Todo</h1>
 
-        <Dialog>
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogTrigger asChild>
             <Button>Add Task</Button>
           </DialogTrigger>
@@ -169,11 +176,7 @@ export default function Home() {
               <Label>Dependencies</Label>
               <MultiSelect
                 values={dependencies.map((dep) => String(dep.id))}
-                onValuesChange={(value) =>
-                  setDependencies(
-                    dependencies.map((dep) => ({ ...dep, id: Number(value) }))
-                  )
-                }
+                onValuesChange={handleMultipleSelectChange}
               >
                 <MultiSelectTrigger className="w-full">
                   <MultiSelectValue placeholder="Select dependencies..." />
@@ -215,22 +218,25 @@ export default function Home() {
       </div>
       <Separator className="my-4" />
       <div className="flex flex-col gap-2">
-        {tasklist.map((task) => (
-          <Link key={task.id} href={`/tasks/${task.id}`}>
-            <Item key={task.id} variant="outline" className="hover:bg-black/10">
-              <ItemContent>
-                <ItemTitle>{task.title}</ItemTitle>
-                <ItemDescription>{task.description}</ItemDescription>
-              </ItemContent>
-              <ItemActions>
-                {renderStatusBadge(task.status)}
-                <Button variant="outline" size="sm">
-                  Open
-                </Button>
-              </ItemActions>
-            </Item>
-          </Link>
-        ))}
+        {tasklist.length === 0 ? (
+          <div className="mx-auto">No tasks found</div>
+        ) : (
+          tasklist.map((task) => (
+            <Link href={`/tasks/${task.id}`}>
+              <Item
+                key={task.id}
+                variant="outline"
+                className="hover:bg-black/10"
+              >
+                <ItemContent>
+                  <ItemTitle>{task.title}</ItemTitle>
+                  <ItemDescription>{task.description}</ItemDescription>
+                </ItemContent>
+                <ItemActions>{renderStatusBadge(task.status)}</ItemActions>
+              </Item>
+            </Link>
+          ))
+        )}
       </div>
     </div>
   );

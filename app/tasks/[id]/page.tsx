@@ -16,9 +16,9 @@ import { Label } from "@radix-ui/react-label";
 import { ChevronLeft } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import React, { useEffect } from "react";
-import Link from "next/link";
-import { useTaskStore } from "@/store/task";
 import { Spinner } from "@/components/ui/spinner";
+import toast from "react-hot-toast";
+import Link from "next/link";
 
 const TaskDetailsPage = () => {
   const params = useParams();
@@ -41,9 +41,11 @@ const TaskDetailsPage = () => {
       fetchTaskDetails(+taskId).then((details) => {
         if (details) {
           setTaskDetails(details);
+          setIsLoading(false);
+        } else {
+          toast.error("Task not found");
+          router.push("/");
         }
-
-        setIsLoading(false);
       });
     }
   }, [taskId]);
@@ -93,7 +95,7 @@ const TaskDetailsPage = () => {
           {taskDetails.dependencies.length > 0 ? (
             <div className="flex flex-col gap-2">
               {taskDetails.dependencies.map((dep) => (
-                <Link key={dep.id} href={`/tasks/${dep.id}`}>
+                <Link href={`/tasks/${dep.id}`}>
                   <Item
                     key={dep.id}
                     variant="outline"
@@ -103,12 +105,7 @@ const TaskDetailsPage = () => {
                       <ItemTitle>{dep.title}</ItemTitle>
                       <ItemDescription>{dep.description}</ItemDescription>
                     </ItemContent>
-                    <ItemActions>
-                      {renderStatusBadge(dep.status)}
-                      <Button variant="outline" size="sm">
-                        Open
-                      </Button>
-                    </ItemActions>
+                    <ItemActions>{renderStatusBadge(dep.status)}</ItemActions>
                   </Item>
                 </Link>
               ))}

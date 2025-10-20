@@ -52,6 +52,10 @@ const TaskEditPage = () => {
     (task) => task.id !== Number(taskId)
   );
 
+  const userCanEditStatus = taskDetails.dependencies.every(
+    (task) => task.status === "done"
+  );
+
   // Fetch task details
   useEffect(() => {
     if (taskId && !isNaN(+taskId)) {
@@ -59,9 +63,11 @@ const TaskEditPage = () => {
       fetchTaskDetails(+taskId, false).then((details) => {
         if (details) {
           setTaskDetails(details);
+          setIsLoading(false);
+        } else {
+          toast.error("Task not found");
+          router.push("/");
         }
-
-        setIsLoading(false);
       });
     }
   }, [taskId]);
@@ -162,8 +168,6 @@ const TaskEditPage = () => {
   };
 
   const handleMultipleSelectChange = (ids: string[]) => {
-    console.log(ids);
-
     const newDependencies = ids
       .map((id) => tasklist.find((task) => task.id === +id))
       .filter((task) => task !== undefined)
@@ -180,7 +184,7 @@ const TaskEditPage = () => {
     );
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-6">
+    <div className="w-full max-w-2xl  p-6">
       <div className="flex items-center gap-4 mb-6">
         <Button
           variant="ghost"
@@ -226,12 +230,13 @@ const TaskEditPage = () => {
           />
         </div>
 
-        {taskDetails.dependencies.every((task) => task.status === "done") && (
+        {userCanEditStatus && (
           <div className="space-y-2">
             <Label htmlFor="status" className="text-base font-semibold">
               Status
             </Label>
             <Select
+              defaultValue="todo"
               value={taskDetails.status}
               onValueChange={(value) =>
                 setTaskDetails({
