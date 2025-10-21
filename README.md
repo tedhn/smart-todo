@@ -2,6 +2,8 @@
 
 A modern todo application built with Next.js that implements smart task propagation and dependency management. Create tasks with dependencies and watch them update automatically based on their relationships.
 
+🚀 **Live Demo**: [https://smart-todo-umber.vercel.app/](https://smart-todo-umber.vercel.app/)
+
 ## Getting Started
 
 1. Clone the repository:
@@ -35,7 +37,7 @@ yarn dev
 - **Styling**: TailwindCSS + ShadcN UI components
 - **State Management**: Zustand with persist middleware
 - **Type Safety**: TypeScript
-- **Databse**: Supabase
+- **Database**: Supabase
 - **Component Library**: ShadcN UI (built on Radix UI)
 
 ## Features
@@ -66,18 +68,15 @@ Task A (complete) → Task B (unlocked) → Task C (locked)
 - **Tasks**: Array in Zustand store
 
 ```typescript
-interface Task {
+interface ITask {
   id: string;
   title: string;
   status: "todo" | "in-progress" | "blocked" | "done";
-  dependencies: string[]; // IDs of tasks this depends on
+  dependencies: ITaskDependency[]; // ITask type with no dependencies
   createdAt: Date;
   updatedAt: Date;
 }
 ```
-
-- **Dependencies**: Map<string, Set<string>> for efficient lookups
-- **State Updates**: Queue-based propagation system
 
 ## Development
 
@@ -103,19 +102,13 @@ npm start
 2. **Dependency Rules**
 
    - Tasks can only depend on existing tasks
-   - No circular dependencies allowed
    - Dependencies are bi-directional (stored in both tasks)
-
-3. **Storage Limitations**
-   - Uses localStorage with 5MB limit
-   - No server-side persistence in current version
 
 ## Future Improvements
 
 1. **Backend Integration**
 
    - RESTful API with Node.js/Express
-   - PostgreSQL database for persistence
    - WebSocket real-time updates
 
 2. **Enhanced Features**
@@ -126,17 +119,16 @@ npm start
    - Multi-user support
    - Bulk actions
    - Task templates
+   - Filtering / Searching Tasks
 
 3. **Performance Optimizations**
 
-   - Implement virtual scrolling
    - Add Redis caching layer
    - Optimize dependency graph traversal
    - Batch updates for dependencies
 
 4. **Testing & Quality**
    - Increase unit test coverage
-   - Add E2E tests with Cypress
    - Implement error boundaries
    - Add input validation
    - Improve error handling
