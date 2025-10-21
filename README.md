@@ -54,14 +54,41 @@ yarn dev
 Tasks use a directed acyclic graph (DAG) structure for dependency management:
 
 1. **Task Creation**: Tasks can be created with zero or more dependencies
-2. **Dependency Validation**: System prevents circular dependencies
-3. **Status Propagation**: Completing a task triggers updates to dependent tasks
+2. **Status Propagation**: Completing a task triggers updates to dependent tasks
 
-Example dependency flow:
+## Updating Task Status Logic
+
+When a task status is updated, it will find if there are any parent tasks that depends upon this tasks. Using a recursive function , we will keep finding more parents tasks until either:
+
+1. The task has already been visited
+2. There are no parent tasks that are dependent on the updating tasks
+
+E.g
 
 ```
-Task A (complete) → Task B (unlocked) → Task C (locked)
+Task A (complete) → Task B (complete) → Task C (todo)
 ```
+
+For example if task A were to be set to "todo", the following would happen:
+
+1. Task A changes to "todo"
+2. System checks Task B (which depends on A)
+   - Since A is not "done", B becomes "blocked"
+3. System then checks Task C (which depends on B)
+   - Since B is now "blocked", C becomes "blocked"
+
+Final result:
+
+```
+Task A (todo) → Task B (blocked) → Task C (blocked)
+```
+
+This cascading update ensures that:
+
+- Dependencies are always properly enforced
+- Tasks can't be worked on until their dependencies are complete
+- Status changes propagate through the entire dependency chain
+- Each task is processed only once (thanks to the visited Set)
 
 ## Data Structures
 
@@ -110,6 +137,7 @@ npm start
 
    - RESTful API with Node.js/Express
    - WebSocket real-time updates
+   - Validations to avoid circular dependencies
 
 2. **Enhanced Features**
 
