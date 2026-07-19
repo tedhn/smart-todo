@@ -74,12 +74,14 @@ export const useTaskStore = create<ITaskState>((set, get) => ({
       visited
     );
 
-    const { error } = await supabase
-      .from("Tasks")
-      .upsert(parentTasksToUpdate)
-      .select();
+    const results = await Promise.all(
+      parentTasksToUpdate.map((t) =>
+        supabase.from("Tasks").update({ status: t.status }).eq("id", t.id)
+      )
+    );
 
-    if (error) return error;
+    const failed = results.find((r) => r.error);
+    if (failed?.error) return failed.error;
 
     const tasksToUpdate = [
       { id: newTask.id, status: newTask.status },

@@ -222,9 +222,8 @@ export default function Home() {
           <div className="mx-auto">No tasks found</div>
         ) : (
           tasklist.map((task) => (
-            <Link href={`/tasks/${task.id}`}>
+            <Link key={task.id} href={`/tasks/${task.id}`}>
               <Item
-                key={task.id}
                 variant="outline"
                 className="hover:bg-black/10"
               >
